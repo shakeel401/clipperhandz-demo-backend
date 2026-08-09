@@ -1,0 +1,20 @@
+{
+  "name": "Anthony Clipper Handz",
+  "owner": "Anthony Rodriguez",
+  "type": "Barber shop",
+  "tagline": "Classic Cuts & Timeless Style",
+  "description": "Modern meets classic. Fresh cuts to take on the day and feel good doing it.",
+  "experience": "Over 10 years of barbering experience",
+  "experience_values": ["Personal consultation", "Quality and craft", "Privacy and comfort", "Flexible hours", "Affordable premium grooming"],
+  "featured_craft": [
+    {"name": "Smooth Fades", "description": "Precision craftsmanship for a seamless transition and polished finish", "separate_published_price": false},
+    {"name": "Razor Lineup", "description": "Sharp precision for a defined edge", "separate_published_price": false},
+    {"name": "Beard Fade & Trim", "description": "Blending the beard gradient while shaping its form", "separate_published_price": false}
+  ],
+  "course_updates": "The website offers signup for updates about a future course; no course schedule or curriculum is published.",
+  "address": null,
+  "phone": null,
+  "hours": "Regular opening hours are not published on the public website. Appointments are booked in advance, and flexible after-hours appointments are offered to accommodate busy schedules.",
+  "public_data_note": "Specific contact details, street address, regular hours, policies, live availability, and appointment durations are not published on clipperhandz.com.",
+  "demo_notice": "This prototype uses public business and service information. Availability and non-Anthony barber profiles are simulated for the demonstration."
+}

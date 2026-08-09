@@ -1,0 +1,6 @@
+{
+  "_demo_notice": "These appointment windows are fictional, predictable demo availability. The public Clipper Handz website does not publish live availability.",
+  "anthony":{"monday":["09:00","10:30","13:00","17:00"],"tuesday":["09:00","11:00","14:00","17:00"],"wednesday":["10:00","12:00","15:30"],"thursday":["09:00","11:30","14:30","17:00"],"friday":["09:00","10:30","13:30","17:00"]},
+  "marcus":{"monday":["09:30","11:00","13:30","16:00"],"tuesday":["10:00","12:30","15:00","17:30"],"wednesday":["09:30","11:30","14:00"],"thursday":["10:00","13:00","16:30"],"friday":["09:30","12:00","15:30"]},
+  "daniel":{"monday":["10:00","12:00","14:30","16:30"],"tuesday":["09:30","11:30","14:30","16:00"],"wednesday":["10:30","13:00","15:00"],"thursday":["09:00","12:00","15:30"],"friday":["10:00","13:00","16:00"]}
+}

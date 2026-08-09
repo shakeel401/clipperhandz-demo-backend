@@ -1,0 +1,5 @@
+[
+  {"id":"anthony","name":"Anthony Rodriguez","role":"Barber Shop Owner","services":["haircut","eyebrows","beard-trim","after-hours","vip","deluxe"],"profile_status":"Publicly confirmed on clipperhandz.com"},
+  {"id":"marcus","name":"Marcus Lee","role":"Demo scheduling profile","services":["haircut","eyebrows","beard-trim","vip","deluxe"],"profile_status":"Fictional profile used only to demonstrate multi-barber scheduling"},
+  {"id":"daniel","name":"Daniel Cruz","role":"Demo scheduling profile","services":["haircut","eyebrows","beard-trim","after-hours","deluxe"],"profile_status":"Fictional profile used only to demonstrate multi-barber scheduling"}
+]

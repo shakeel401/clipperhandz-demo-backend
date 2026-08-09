@@ -1,0 +1,8 @@
+[
+  {"id":"haircut","name":"Hair Cut","price":50,"price_display":"$50","duration":null,"description":"Transforming your style with precision and artistry.","source":"Published service"},
+  {"id":"eyebrows","name":"Eyebrows","price":5,"price_display":"+$5","duration":null,"description":"Shaping and refining for symmetrical brows that frame and accentuate your features.","source":"Published service add-on"},
+  {"id":"beard-trim","name":"Beard Trim","price":5,"price_display":"+$5","duration":null,"description":"Crafting a refined silhouette to bring out your beard's character and shape.","source":"Published service add-on"},
+  {"id":"after-hours","name":"After Hours Haircut","price":100,"price_display":"$100","duration":null,"description":"Convenient grooming beyond regular hours, ensuring you look sharp no matter the time.","source":"Published service"},
+  {"id":"vip","name":"VIP Booking Hours","price":75,"price_display":"$75","duration":null,"description":"Exclusive 9 AM and 5 PM slots prioritizing VIP clients for prime grooming experiences.","source":"Published service"},
+  {"id":"deluxe","name":"Hair Cut Deluxe","price":60,"price_display":"$60","duration":null,"description":"The package: Haircut, Beard Trim, and Eyebrow shaping.","source":"Published service"}
+]
