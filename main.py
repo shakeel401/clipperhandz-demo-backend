@@ -24,7 +24,11 @@ from backend.tools.receptionist_tools import complete_appointment, get_demo_over
 
 app = FastAPI(title="Clipper Handz AI Receptionist")
 
-default_origins = ["http://localhost:4173", "http://127.0.0.1:4173"]
+default_origins = [
+    "http://localhost:4173",
+    "http://127.0.0.1:4173",
+    "https://clipperhandz-ai-receptionist-demo.vercel.app",
+]
 configured_origins = [origin.strip().rstrip("/") for origin in os.getenv("CORS_ORIGINS", "").split(",") if origin.strip()]
 app.add_middleware(
     CORSMiddleware,
