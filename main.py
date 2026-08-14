@@ -14,6 +14,10 @@ PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 if PROJECT_ROOT not in sys.path:
     sys.path.insert(0, PROJECT_ROOT)
 
+# Support both the repository-level environment file used for local development and
+# a backend-local file used when this directory is run/deployed independently.
+# Existing process/parent values remain authoritative.
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), ".env"))
 load_dotenv(dotenv_path=os.path.join(PROJECT_ROOT, ".env"))
 
 from backend.clipperhandz_agent_pkg.receptionist import receptionist_agent
