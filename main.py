@@ -43,7 +43,7 @@ async def startup():
 
 @app.get("/health")
 async def health():
-    return {"status": "ok", "service": "clipperhandz-demo-backend"}
+    return {"status": "ok", "service": "clipperhandz-demo-backend", "booking_provider": os.getenv("BOOKING_PROVIDER", "booksy").strip().lower()}
 
 def _display_time(value: str) -> str:
     return datetime.strptime(value, "%H:%M").strftime("%I:%M %p").lstrip("0")
@@ -53,6 +53,7 @@ def _ui_metadata(result):
     call_names = {}
     availability = []
     booking = None
+    booksy_booking = None
     for item in result.new_items:
         raw = getattr(item, "raw_item", None)
         if getattr(item, "type", None) == "tool_call_item":
@@ -72,12 +73,34 @@ def _ui_metadata(result):
             # reserve cards for a genuine choice of times.
             if len(slots) > 1:
                 availability = [{**slot, "display_time": _display_time(slot["time"]), "barber": slot["barber_name"]} for slot in slots[:5]]
+        if tool_name == "find_booksy_availability":
+            slots = payload.get("options") or []
+            if slots:
+                availability = [
+                    {
+                        **slot,
+                        "display_time": _display_time(slot["time"]),
+                        "barber": slot["staffer_name"],
+                        "barber_id": slot["staffer_id"],
+                    }
+                    for slot in slots[:6]
+                ]
         if tool_name == "create_booking" and payload.get("booking"):
             raw_booking = payload["booking"]
             booking = {"id": raw_booking["appointment_id"], "service": payload["service_name"], "barber": payload["barber_name"], "day": raw_booking["appointment_date"].title(), "time": _display_time(raw_booking["appointment_time"])}
+        if tool_name == "prepare_booksy_booking_link" and payload.get("booking_url"):
+            booksy_booking = {
+                "service": payload["service_name"],
+                "barber": payload["staffer_name"],
+                "day": payload["date"],
+                "time": _display_time(payload["time"]),
+                "url": payload["booking_url"],
+            }
     if booking:
         availability = []
-    return {"availability": availability, "booking": booking}
+    if booksy_booking:
+        availability = []
+    return {"availability": availability, "booking": booking, "booksy_booking": booksy_booking}
 
 @app.post("/api/chat/receptionist")
 async def chat_endpoint(request: Request):
