@@ -19,6 +19,8 @@ from agents import function_tool
 
 
 PARSE_BASE_URL = "https://api.parse.bot/scraper"
+PARSE_BOOKSY_SCRAPER_ID = "1f72a8f2-667d-4949-9532-4a90d656f7af"
+PARSE_BOOKSY_CANONICAL_ENDPOINT_ID = "f0902cfa-08ee-43d3-a91b-f350352983ff"
 BUSINESS_CACHE_TTL_SECONDS = int(os.getenv("BOOKSY_PROFILE_CACHE_SECONDS", "21600"))
 SLOTS_CACHE_TTL_SECONDS = int(os.getenv("BOOKSY_SLOTS_CACHE_SECONDS", "60"))
 HTTP_TIMEOUT_SECONDS = float(os.getenv("BOOKSY_HTTP_TIMEOUT_SECONDS", "12"))
@@ -34,7 +36,15 @@ class BooksyError(Exception):
 
 def _configuration() -> tuple[str, str, str, str]:
     api_key = os.getenv("PARSE_API_KEY", "").strip()
-    scraper_id = os.getenv("PARSE_BOOKSY_API_ID", "1f72a8f2-667d-4949-9532-4a90d656f7af").strip()
+    # Parse shows two IDs in its dashboard: the subscribed scraper/API ID and the
+    # canonical HTTP endpoint ID. The direct REST URL uses the latter. Support the
+    # previous variable for backwards compatibility, but map the known subscription
+    # ID to its canonical endpoint so a deployment does not silently make 404 calls.
+    configured_endpoint = os.getenv("PARSE_BOOKSY_ENDPOINT_ID", "").strip()
+    legacy_api_id = os.getenv("PARSE_BOOKSY_API_ID", "").strip()
+    scraper_id = configured_endpoint or legacy_api_id or PARSE_BOOKSY_CANONICAL_ENDPOINT_ID
+    if scraper_id == PARSE_BOOKSY_SCRAPER_ID:
+        scraper_id = PARSE_BOOKSY_CANONICAL_ENDPOINT_ID
     business_id = os.getenv("BOOKSY_BUSINESS_ID", "1841792").strip()
     snapshot = os.getenv("PARSE_API_SNAPSHOT_VERSION", "4").strip()
     if not api_key:
