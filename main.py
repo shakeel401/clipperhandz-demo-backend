@@ -52,6 +52,10 @@ async def health():
 def _display_time(value: str) -> str:
     return datetime.strptime(value, "%H:%M").strftime("%I:%M %p").lstrip("0")
 
+def _display_date(value: str) -> str:
+    parsed = datetime.strptime(value, "%Y-%m-%d")
+    return f"{parsed.strftime('%A, %B')} {parsed.day}"
+
 def _ui_metadata(result):
     """Expose verified function-tool outputs to the chat UI without trusting model prose."""
     call_names = {}
@@ -87,7 +91,7 @@ def _ui_metadata(result):
                         "barber": slot["staffer_name"],
                         "barber_id": slot["staffer_id"],
                     }
-                    for slot in slots[:6]
+                    for slot in slots[:4]
                 ]
         if tool_name == "create_booking" and payload.get("booking"):
             raw_booking = payload["booking"]
@@ -96,7 +100,7 @@ def _ui_metadata(result):
             booksy_booking = {
                 "service": payload["service_name"],
                 "barber": payload["staffer_name"],
-                "day": payload["date"],
+                "day": _display_date(payload["date"]),
                 "time": _display_time(payload["time"]),
                 "url": payload["booking_url"],
             }
@@ -119,7 +123,18 @@ async def chat_endpoint(request: Request):
         from agents import Runner
         session = get_session(thread_id)
         result = await Runner.run(receptionist_agent, message, session=session)
-        return {"message": str(result.final_output), "session_id": thread_id, **_ui_metadata(result)}
+        metadata = _ui_metadata(result)
+        response_message = str(result.final_output)
+        # The link is generated from the verified recheck, not model prose. This
+        # keeps it short, valid Markdown, and reliably clickable in the chat.
+        if metadata["booksy_booking"]:
+            booking = metadata["booksy_booking"]
+            response_message = (
+                f"Your selected time with **{booking['barber']}** is currently available.\n\n"
+                f"[Book with {booking['barber']} on Booksy]({booking['url']})\n\n"
+                "Booksy completes the final appointment confirmation."
+            )
+        return {"message": response_message, "session_id": thread_id, **metadata}
     except Exception as exc:
         return JSONResponse({"error": str(exc)}, status_code=500)
 
