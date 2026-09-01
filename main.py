@@ -28,7 +28,6 @@ from backend.tools.receptionist_tools import complete_appointment, get_demo_over
 from backend.tools.booksy_tools import _check_calendar_time
 
 app = FastAPI(title="Clipper Handz AI Receptionist")
-pending_booksy_handoffs: dict[str, dict[str, str]] = {}
 
 default_origins = [
     "http://localhost:4173",
@@ -154,13 +153,6 @@ def _ui_metadata(result):
         "booksy_widget": booksy_widget,
     }
 
-def _is_booksy_consent(message: str) -> bool:
-    normalized = " ".join(message.lower().strip().split())
-    return normalized in {
-        "yes", "yes please", "yes, please", "yeah", "yep", "sure", "please", "continue", "open it",
-        "open booksy", "open the calendar", "open the booksy calendar",
-    }
-
 def _booksy_widget_payload(payload: dict) -> dict:
     return {
         "service": _display_label(payload["service_name"]),
@@ -178,39 +170,25 @@ async def chat_endpoint(request: Request):
     if not os.getenv("OPENAI_API_KEY"):
         return JSONResponse({"error": "OPENAI_API_KEY is missing. Add it to the project .env file."}, status_code=503)
     try:
-        pending_offer = pending_booksy_handoffs.get(thread_id)
-        # Opening the widget is an explicit UI action, not an LLM judgement call.
-        # This prevents staff-selection questions after the customer approves Booksy.
-        if pending_offer and _is_booksy_consent(message):
-            payload = await _check_calendar_time(
-                pending_offer["service"], pending_offer["date"], pending_offer["time"],
-            )
-            pending_booksy_handoffs.pop(thread_id, None)
-            if payload.get("status") == "currently_available":
-                widget = _booksy_widget_payload(payload)
-                return {
-                    "message": (
-                        f"**{widget['time']}** is currently available for a **{widget['service']}** on {widget['day']}.\n\n"
-                        "I'm opening the Booksy booking calendar now. Please choose your service, barber, and final time there "
-                        "to complete the appointment."
-                    ),
-                    "session_id": thread_id,
-                    "availability": [],
-                    "availability_context": None,
-                    "booking": None,
-                    "booksy_widget": widget,
-                }
         from agents import Runner
         session = get_session(thread_id)
         result = await Runner.run(receptionist_agent, message, session=session)
         metadata = _ui_metadata(result)
         response_message = str(result.final_output)
+        # Once a customer names a time, this server-owned branch performs a final
+        # live recheck and emits the widget action immediately. It prevents an
+        # extra confirmation turn and keeps barber selection inside Booksy.
+        selected = metadata["availability_context"]
+        if selected and selected.get("time") and not metadata["booksy_widget"]:
+            payload = await _check_calendar_time(selected["service"], selected["date"], selected["time"])
+            if payload.get("status") == "currently_available":
+                metadata["booksy_widget"] = _booksy_widget_payload(payload)
+                metadata["availability_context"] = None
         # Booksy's public widget cannot receive a preselected service, staffer, or
         # time. The tool result is still rechecked before the widget is opened,
         # but Booksy performs the customer's final selection and confirmation.
         if metadata["booksy_widget"]:
             booking = metadata["booksy_widget"]
-            pending_booksy_handoffs.pop(thread_id, None)
             response_message = (
                 f"**{booking['time']}** is currently available for a **{booking['service']}** on {booking['day']}.\n\n"
                 "I'm opening the Booksy booking calendar now. Please choose your service, barber, and final time there "
@@ -218,21 +196,15 @@ async def chat_endpoint(request: Request):
             )
         elif metadata["availability_context"]:
             availability = metadata["availability_context"]
-            if availability.get("time"):
-                pending_booksy_handoffs[thread_id] = {
-                    "service": availability["service"],
-                    "date": availability["date"],
-                    "time": availability["time"],
-                }
             if availability.get("selected_time"):
                 response_message = (
                     f"**{availability['selected_time']}** is currently available for a **{availability['service']}** on "
-                    f"{availability['day']}. Would you like me to open the Booksy booking calendar?"
+                    f"{availability['day']}."
                 )
             elif availability.get("suggested_time"):
                 response_message = (
                     f"**{availability['suggested_time']}** is one of the current available times for a "
-                    f"**{availability['service']}** on {availability['day']}. Would you like me to open the Booksy booking calendar?"
+                    f"**{availability['service']}** on {availability['day']}."
                 )
             else:
                 windows = availability.get("windows") or []
