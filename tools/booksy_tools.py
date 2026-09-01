@@ -289,6 +289,7 @@ async def find_booksy_availability(service_query: str, appointment_date: str, pr
         else:
             options.sort(key=lambda item: (item["time"], item["staffer_name"]))
             shown = options[:8]
+        available_times = sorted({item["time"] for item in options}, key=_minutes)
         return json.dumps({
             "source": "booksy",
             "status": "available" if shown else "unavailable",
@@ -297,7 +298,57 @@ async def find_booksy_availability(service_query: str, appointment_date: str, pr
             "date": resolved_date,
             "preferred_time": resolved_time,
             "options": shown,
+            "available_times": available_times,
         })
+    except BooksyError as error:
+        return json.dumps({"error": str(error)})
+
+
+async def _check_calendar_time(service_query: str, appointment_date: str, appointment_time: str) -> dict[str, Any]:
+    """Return the current any-staff state for a Booksy time without creating an appointment."""
+    profile = await get_profile()
+    service = _resolve_service(profile, service_query)
+    if not service:
+        return {"error": "That service was not found on Booksy. Please choose a current Booksy service."}
+    resolved_date = _resolve_date(appointment_date)
+    resolved_time = _normalise_time(appointment_time)
+    slot_results = await asyncio.gather(*[
+        _slots_for(member["id"], service["variant_id"], resolved_date, force_refresh=True)
+        for member in profile["staff"]
+    ])
+    available_staff_count = sum(resolved_time in slots for slots in slot_results)
+    if not available_staff_count:
+        return {
+            "error": "That time is no longer available. Call find_booksy_availability for current alternatives.",
+            "status": "unavailable",
+        }
+    return {
+        "source": "booksy",
+        "status": "currently_available",
+        "service_name": service["name"],
+        "date": resolved_date,
+        "time": resolved_time,
+        "available_staff_count": available_staff_count,
+    }
+
+
+@function_tool
+async def verify_booksy_time(service_query: str, appointment_date: str, appointment_time: str) -> str:
+    """Recheck whether any current Booksy staff member has the requested service and time. Use after the customer chooses a time, before asking permission to open the Booksy calendar. This never creates, reserves, or confirms an appointment."""
+    try:
+        return json.dumps(await _check_calendar_time(service_query, appointment_date, appointment_time))
+    except BooksyError as error:
+        return json.dumps({"error": str(error)})
+
+
+@function_tool
+async def prepare_booksy_calendar(service_query: str, appointment_date: str, appointment_time: str) -> str:
+    """Perform the final live recheck immediately before opening the on-site Booksy calendar. Use only after the customer says yes to opening Booksy. This never creates, reserves, or confirms an appointment."""
+    try:
+        payload = await _check_calendar_time(service_query, appointment_date, appointment_time)
+        if payload.get("status") == "currently_available":
+            payload["final_confirmation"] = "The customer chooses all appointment details and completes the booking in Booksy."
+        return json.dumps(payload)
     except BooksyError as error:
         return json.dumps({"error": str(error)})
 
